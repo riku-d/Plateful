@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
+import ChatbotWidget from './components/ChatbotWidget';
 
 // Pages
 import Home from './pages/Home';
@@ -177,6 +178,7 @@ function App() {
         </Routes>
       </main>
       <Footer />
+      <ChatbotWidget />
     </div>
   );
 }
