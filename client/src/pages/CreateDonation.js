@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
+import api from '../utils/api';
 import { 
   FaHandHoldingHeart, 
   FaUpload, 
@@ -34,15 +35,17 @@ const CreateDonation = () => {
     dietaryInfo: '',
     allergens: [],
     storageInstructions: '',
-    contactPhone: '',
-    contactEmail: '',
+    donorNumber: user?.phone || '',
+    contactEmail: user?.email || '',
     expirationDate: '',
-    expirationTime: '',
     freshness: 'fresh', // fresh, day-old, older
     isRefrigerated: false,
     isFrozen: false,
-    safetyHours: 24, // Default 24 hours
-    safetyNotes: ''
+    safetyNotes: '',
+    donorName: user?.name || '',
+    packaging: '',
+    humidity: '',
+    temperature: ''
   });
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -65,9 +68,21 @@ const CreateDonation = () => {
     }
   }, [location]);
 
+  // Populate form with user data when component mounts
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        donorName: user.name || '',
+        donorNumber: user.phone || '',
+        contactEmail: user.email || ''
+      }));
+    }
+  }, [user]);
+
   const foodTypes = [
     'vegetables', 'fruits', 'dairy', 'meat', 'bakery', 
-    'canned', 'grains', 'beverages', 'snacks', 'prepared-meals', 'other'
+    'canned', 'grains', 'beverages', 'snacks', 'Rajma','Dal','Idli' ,'other'
   ];
 
   const quantityUnits = ['kg', 'grams', 'pieces', 'packets', 'bottles', 'cans', 'loaves', 'dozen'];
@@ -82,14 +97,7 @@ const CreateDonation = () => {
     { value: 'older', label: 'Older (2+ days)' }
   ];
   
-  const safetyHoursOptions = [
-    { value: 2, label: '2 hours (high-risk foods at room temperature)' },
-    { value: 4, label: '4 hours (most prepared foods)' },
-    { value: 8, label: '8 hours (preserved/packaged foods)' },
-    { value: 24, label: '24 hours (with proper refrigeration)' },
-    { value: 48, label: '48 hours (with proper refrigeration)' },
-    { value: 72, label: '72+ hours (long shelf-life items)' }
-  ];
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -150,8 +158,9 @@ const CreateDonation = () => {
       return;
     }
 
-    if (!formData.title || !formData.description || !formData.foodType || !formData.quantity) {
-      toast.error('Please fill in all required fields');
+    if (!formData.donorName || !formData.title || !formData.description || !formData.foodType || !formData.quantity || 
+        !formData.location || !formData.packaging || !formData.humidity || !formData.temperature || !formData.donorNumber) {
+      toast.error('Please fill in all required fields including donor name, packaging, humidity, temperature, and WhatsApp number');
       return;
     }
 
@@ -166,9 +175,9 @@ const CreateDonation = () => {
           amount: parseFloat(formData.quantity),
           unit: formData.quantityUnit
         },
-        expirationDate: formData.expirationDate && formData.expirationTime
-          ? new Date(`${formData.expirationDate}T${formData.expirationTime}`)
-          : new Date(Date.now() + formData.safetyHours * 60 * 60 * 1000),
+        expirationDate: formData.expirationDate
+          ? new Date(`${formData.expirationDate}T00:00`)
+          : new Date(Date.now() + 24 * 60 * 60 * 1000), // Default to 24 hours
         pickupDate: formData.pickupDate,
         pickupTime: formData.pickupTime,
         location: {
@@ -189,7 +198,6 @@ const CreateDonation = () => {
         estimatedValue: 0,
         isUrgent: false,
         safetyInfo: {
-          safetyHours: parseInt(formData.safetyHours),
           freshness: formData.freshness,
           safetyNotes: formData.safetyNotes
         }
@@ -203,22 +211,23 @@ const CreateDonation = () => {
         donationData.images = images.map(img => URL.createObjectURL(img.file));
       }
 
-      // Make API call to create donation
-      const response = await fetch('/api/donations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-auth-token': localStorage.getItem('token')
-        },
-        body: JSON.stringify(donationData)
-      });
+      // ✅ API call to backend (foodRoutes.js) with required fields
+      const foodData = {
+        donorName: formData.donorName,
+        foodType: formData.foodType,
+        quantity: parseFloat(formData.quantity),
+        donorNumber: formData.donorNumber,
+        title: formData.title,
+        description: formData.description,
+        location: formData.location,
+        packaging: formData.packaging,
+        humidity: parseFloat(formData.humidity),
+        temperature: parseFloat(formData.temperature)
+      };
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create donation');
-      }
-      
-      toast.success('Donation created successfully!');
+      const response = await api.post('/api/food/donate', foodData);
+      const result = response.data;
+      toast.success(`Donation created successfully! ${result.food.expiryHours}`);
       navigate('/donations');
     } catch (error) {
       console.error('Donation creation error:', error);
@@ -437,7 +446,23 @@ const CreateDonation = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-              <div className="sm:col-span-4">
+              <div className="sm:col-span-3">
+                <label htmlFor="donorName" className="block text-sm font-medium text-gray-700">Donor Name *</label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    name="donorName"
+                    id="donorName"
+                    value={formData.donorName}
+                    onChange={handleChange}
+                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                    placeholder="Your full name"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-3">
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700">Title *</label>
                 <div className="mt-1">
                   <input
@@ -547,23 +572,7 @@ const CreateDonation = () => {
                 </div>
               </div>
 
-              <div className="sm:col-span-3">
-                <label htmlFor="safetyHours" className="block text-sm font-medium text-gray-700">Safe to Eat For *</label>
-                <div className="mt-1">
-                  <select
-                    id="safetyHours"
-                    name="safetyHours"
-                    value={formData.safetyHours}
-                    onChange={handleChange}
-                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                    required
-                  >
-                    {safetyHoursOptions.map(option => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+
 
               <div className="sm:col-span-3">
                 <label htmlFor="expirationDate" className="block text-sm font-medium text-gray-700">Expiration Date</label>
@@ -580,19 +589,7 @@ const CreateDonation = () => {
                 </div>
               </div>
 
-              <div className="sm:col-span-3">
-                <label htmlFor="expirationTime" className="block text-sm font-medium text-gray-700">Expiration Time</label>
-                <div className="mt-1">
-                  <input
-                    type="time"
-                    name="expirationTime"
-                    id="expirationTime"
-                    value={formData.expirationTime}
-                    onChange={handleChange}
-                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                  />
-                </div>
-              </div>
+
 
               <div className="sm:col-span-6">
                 <label htmlFor="safetyNotes" className="block text-sm font-medium text-gray-700">Safety Notes</label>
@@ -735,22 +732,7 @@ const CreateDonation = () => {
                 </div>
               </div>
 
-              <div className="sm:col-span-3">
-                <label htmlFor="safetyHours" className="block text-sm font-medium text-gray-700">Safe Consumption Window</label>
-                <div className="mt-1">
-                  <select
-                    id="safetyHours"
-                    name="safetyHours"
-                    value={formData.safetyHours}
-                    onChange={handleChange}
-                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                  >
-                    {safetyHoursOptions.map(option => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+
 
               <div className="sm:col-span-6">
                 <label htmlFor="safetyNotes" className="block text-sm font-medium text-gray-700">Safety Notes</label>
@@ -766,6 +748,64 @@ const CreateDonation = () => {
                   />
                 </div>
               </div>
+
+              <div className="sm:col-span-3">
+                <label htmlFor="packaging" className="block text-sm font-medium text-gray-700">Packaging Type *</label>
+                <div className="mt-1">
+                  <select
+                    id="packaging"
+                    name="packaging"
+                    value={formData.packaging}
+                    onChange={handleChange}
+                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                    required
+                  >
+                    <option value="">Select packaging</option>
+                    <option value="plastic">Plastic</option>
+                    <option value="glass">Glass</option>
+                    <option value="paper">Paper</option>
+                    <option value="metal">Metal</option>
+                    <option value="cloth">Cloth</option>
+                    <option value="none">No Packaging</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="sm:col-span-3">
+                <label htmlFor="humidity" className="block text-sm font-medium text-gray-700">Humidity (%) *</label>
+                <div className="mt-1">
+                  <input
+                    type="number"
+                    name="humidity"
+                    id="humidity"
+                    value={formData.humidity}
+                    onChange={handleChange}
+                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                    placeholder="e.g., 65"
+                    min="0"
+                    max="100"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-3">
+                <label htmlFor="temperature" className="block text-sm font-medium text-gray-700">Temperature (°C) *</label>
+                <div className="mt-1">
+                  <input
+                    type="number"
+                    name="temperature"
+                    id="temperature"
+                    value={formData.temperature}
+                    onChange={handleChange}
+                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                    placeholder="e.g., 25"
+                    min="-40"
+                    max="100"
+                    required
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -777,6 +817,22 @@ const CreateDonation = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+              <div className="sm:col-span-3">
+                <label htmlFor="donorNumber" className="block text-sm font-medium text-gray-700">WhatsApp Number *</label>
+                <div className="mt-1">
+                  <input
+                    type="tel"
+                    name="donorNumber"
+                    id="donorNumber"
+                    value={formData.donorNumber}
+                    onChange={handleChange}
+                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                    placeholder={user.phone || "+91XXXXXXXXXX"}
+                    required
+                  />
+                </div>
+              </div>
+
               <div className="sm:col-span-3">
                 <label htmlFor="contactPhone" className="block text-sm font-medium text-gray-700">Contact Phone</label>
                 <div className="mt-1">

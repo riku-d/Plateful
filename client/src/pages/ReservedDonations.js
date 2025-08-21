@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../utils/api';
 import {
   FaMapMarkerAlt,
   FaClock,
@@ -24,7 +24,8 @@ const ReservedDonations = () => {
     const fetchReservedDonations = async () => {
       try {
         // Fetch orders instead of reserved donations to get both pickup and delivery orders
-        const response = await axios.get('/api/orders/user');
+        console.log('Fetching user orders');
+        const response = await api.get('/api/orders/user');
         // Filter out cancelled orders
         const activeOrders = response.data.filter(order => order.status !== 'cancelled');
         setReservedDonations(activeOrders);
@@ -41,7 +42,7 @@ const ReservedDonations = () => {
 
   const handleMarkAsPickedUp = async (donationId) => {
     try {
-      await axios.post(`/api/donations/${donationId}/pickup`);
+      await api.post(`/api/donations/${donationId}/pickup`);
       
       // Update the local state to reflect the change
       setReservedDonations(prevDonations => 
@@ -255,7 +256,7 @@ const ReservedDonations = () => {
                         <button
                           onClick={async () => {
                             try {
-                              await axios.put(`/api/orders/${donation._id}/complete`);
+                              await api.put(`/api/orders/${donation._id}/complete`);
                               
                               // Update the local state to reflect the change
                               setReservedDonations(prevDonations => 
@@ -281,7 +282,7 @@ const ReservedDonations = () => {
                         <button
                           onClick={async () => {
                             try {
-                              await axios.put(`/api/orders/${donation._id}/status`, { status: 'delivered' });
+                              await api.put(`/api/orders/${donation._id}/status`, { status: 'delivered' });
                               
                               // Update the local state to reflect the change
                               setReservedDonations(prevDonations => 

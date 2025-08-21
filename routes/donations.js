@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const auth = require('../middleware/auth');
 const Donation = require('../models/Donation');
+const Food = require('../models/Food'); // ✅ Add Food model
 const User = require('../models/User');
 
 const router = express.Router();
@@ -22,22 +23,25 @@ router.get('/', async (req, res) => {
       limit = 10
     } = req.query;
 
-    let query = { status: { $ne: 'expired' } };
+    // ✅ Fetch from both Donation and Food collections
+    let donationsQuery = { status: { $ne: 'expired' } };
+    let foodsQuery = {};
 
     // Filter by food type
     if (foodType) {
-      query.foodType = foodType;
+      donationsQuery.foodType = foodType;
+      foodsQuery.foodType = foodType;
     }
 
-    // Filter by status
+    // Filter by status (only for donations, foods don't have status)
     if (status) {
-      query.status = status;
+      donationsQuery.status = status;
     }
 
-    // Filter by location and radius
+    // Filter by location and radius (only for donations with coordinates)
     if (location && radius) {
       const [lat, lng] = location.split(',').map(Number);
-      query['location.coordinates'] = {
+      donationsQuery['location.coordinates'] = {
         $near: {
           $geometry: {
             type: 'Point',
@@ -51,13 +55,43 @@ router.get('/', async (req, res) => {
     // Pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    const donations = await Donation.find(query)
-      .populate('donor', 'name rating')
-      .sort({ [sortBy]: order === 'desc' ? -1 : 1 })
-      .skip(skip)
-      .limit(parseInt(limit));
+    // Fetch from both collections
+    const [donations, foods] = await Promise.all([
+      Donation.find(donationsQuery)
+        .populate('donor', 'name rating')
+        .sort({ [sortBy]: order === 'desc' ? -1 : 1 })
+        .skip(skip)
+        .limit(parseInt(limit)),
+      Food.find(foodsQuery)
+        .sort({ [sortBy]: order === 'desc' ? -1 : 1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+    ]);
 
-    res.json(Array.isArray(donations) ? donations : []);
+    // ✅ Combine and format results
+    const combinedResults = [
+      ...donations.map(d => ({ ...d.toObject(), source: 'donations' })),
+      ...foods.map(f => ({ 
+        ...f.toObject(), 
+        source: 'foods',
+        status: 'available', // Foods are always available
+        donor: { name: f.donorName, rating: 5 }, // Map food fields to donation format
+        remainingMinutes: f.remainingMinutes,
+        expiryStatus: f.expiryStatus,
+        shouldBeRemoved: f.shouldBeRemoved()
+      }))
+    ];
+
+    // Sort combined results
+    combinedResults.sort((a, b) => {
+      if (order === 'desc') {
+        return new Date(b[sortBy]) - new Date(a[sortBy]);
+      } else {
+        return new Date(a[sortBy]) - new Date(b[sortBy]);
+      }
+    });
+
+    res.json(combinedResults);
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ message: 'Server error' });
@@ -321,6 +355,19 @@ router.get('/user/reserved', auth, async (req, res) => {
       .sort({ reservedAt: -1 });
     
     res.json(Array.isArray(reservedDonations) ? reservedDonations : []);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ✅ @route   GET /api/donations/foods
+// @desc    Get all food donations (from Food collection)
+// @access  Public
+router.get('/foods', async (req, res) => {
+  try {
+    const foods = await Food.find().sort({ createdAt: -1 });
+    res.json(foods);
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ message: 'Server error' });

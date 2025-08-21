@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
 import { FaMapMarkerAlt, FaClock, FaHandHoldingHeart, FaUser, FaPhone, FaCalendarAlt, FaTag, FaExclamationTriangle, FaCheckCircle } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../utils/api';
 
 const DonationDetail = () => {
   const { id } = useParams();
@@ -18,10 +18,13 @@ const DonationDetail = () => {
   useEffect(() => {
     const fetchDonation = async () => {
       try {
-        const res = await axios.get(`/api/donations/${id}`);
+        console.log('Fetching donation with ID:', id);
+        const res = await api.get(`/api/donations/${id}`);
+        console.log('Donation data received:', res.data); // Debug log
         setDonation(res.data);
         setLoading(false);
       } catch (err) {
+        console.error('Error fetching donation:', err);
         setError(err.response?.data?.message || 'Failed to fetch donation details');
         setLoading(false);
       }
@@ -38,7 +41,7 @@ const DonationDetail = () => {
 
     try {
       setReserving(true);
-      const res = await axios.post(`/api/donations/${id}/reserve`);
+      const res = await api.post(`/api/donations/${id}/reserve`);
       setDonation(res.data);
       setSuccess('Donation reserved successfully! Please pick it up at the specified time.');
       setReserving(false);
@@ -53,7 +56,7 @@ const DonationDetail = () => {
   const handlePickupDonation = async () => {
     try {
       setReserving(true);
-      const res = await axios.post(`/api/donations/${id}/pickup`);
+      const res = await api.post(`/api/donations/${id}/pickup`);
       setDonation(res.data);
       setSuccess('Donation marked as picked up!');
       setReserving(false);

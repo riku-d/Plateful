@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import ExpiryTimeDisplay from '../components/ExpiryTimeDisplay';
+import api from '../utils/api';
 import {
   FaSearch,
   FaMapMarkerAlt,
@@ -24,11 +26,9 @@ const Donations = () => {
   useEffect(() => {
     const fetchDonations = async () => {
       try {
-        const response = await fetch('/api/donations'); // ✅ call backend
-        if (!response.ok) {
-          throw new Error('Failed to fetch donations');
-        }
-        const data = await response.json();
+        console.log('Fetching all donations');
+        const response = await api.get('/api/donations'); // ✅ call backend
+        const data = response.data;
         
         // Ensure we're getting donations with donor information
         const donationsWithDonorInfo = data.map(donation => {
@@ -50,6 +50,11 @@ const Donations = () => {
     };
 
     fetchDonations();
+
+    // ✅ Auto-refresh every 5 minutes to remove expired items
+    const interval = setInterval(fetchDonations, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const filteredDonations = donations.filter((donation) => {
@@ -217,8 +222,16 @@ const Donations = () => {
           {filteredDonations.map((donation) => (
             <div
               key={donation._id}
-              className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-200"
+              className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-200 relative"
             >
+              {/* Expiry Time Display */}
+              <ExpiryTimeDisplay
+                expiryTime={donation.expiryTime}
+                remainingMinutes={donation.remainingMinutes}
+                expiryStatus={donation.expiryStatus}
+                source={donation.source}
+              />
+              
               {/* Image */}
               <div className="aspect-w-16 aspect-h-9 bg-gray-200">
                 {donation.images?.length > 0 ? (
