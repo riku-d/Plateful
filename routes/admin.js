@@ -17,12 +17,15 @@ router.get('/stats', [auth, adminAuth], async (req, res) => {
     const donationCount = await Donation.countDocuments();
     const organizationCount = await Organization.countDocuments();
     const requestCount = await Order.countDocuments();
+    const OrganizationApplication = require('../models/OrganizationApplication');
+    const pendingApplicationsCount = await OrganizationApplication.countDocuments({ status: 'pending' });
 
     res.json({
       users: userCount,
       donations: donationCount,
       organizations: organizationCount,
-      requests: requestCount
+      requests: requestCount,
+      pendingApplications: pendingApplicationsCount
     });
   } catch (err) {
     console.error(err.message);

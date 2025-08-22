@@ -39,6 +39,7 @@ app.use('/api/donations', require('./routes/donations'));
 app.use('/api/food', require('./routes/foodRoutes')); // ✅ Add food route
 app.use('/api/requests', require('./routes/requests'));
 app.use('/api/organizations', require('./routes/organizations'));
+app.use('/api/organization-applications', require('./routes/organizationApplications'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/posts', require('./routes/posts'));
 app.use('/api/notifications', require('./routes/notifications'));
