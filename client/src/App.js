@@ -17,6 +17,7 @@ import DonationDetail from './pages/DonationDetail';
 import OrganizationDetail from './pages/OrganizationDetail';
 import CreateDonation from './pages/CreateDonation';
 import CreateOrganization from './pages/CreateOrganization';
+import MyOrganizationApplications from './pages/MyOrganizationApplications';
 import ReservedDonations from './pages/ReservedDonations';
 import OrderFood from './pages/OrderFood';
 import OrderDetail from './pages/OrderDetail';
@@ -29,6 +30,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
 import AdminOrders from './pages/AdminOrders';
 import AdminDonations from './pages/AdminDonations';
+import AdminOrganizationApplications from './pages/AdminOrganizationApplications';
 
 // Route guards
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -146,11 +148,16 @@ function App() {
             </RoleBasedRoute>
           } />
 
-          {/* Admins + Volunteers */}
+          {/* Organization Applications */}
           <Route path="/organizations/create" element={
-            <RoleBasedRoute allowedRoles={['admin', 'volunteer']}>
+            <RoleBasedRoute allowedRoles={['donor', 'recipient', 'volunteer']}>
               <CreateOrganization />
             </RoleBasedRoute>
+          } />
+          <Route path="/my-applications" element={
+            <ProtectedRoute>
+              <MyOrganizationApplications />
+            </ProtectedRoute>
           } />
 
           {/* Admin Routes */}
@@ -172,6 +179,11 @@ function App() {
           <Route path="/admin/donations" element={
             <RoleBasedRoute allowedRoles={['admin']}>
               <AdminDonations />
+            </RoleBasedRoute>
+          } />
+          <Route path="/admin/organization-applications" element={
+            <RoleBasedRoute allowedRoles={['admin']}>
+              <AdminOrganizationApplications />
             </RoleBasedRoute>
           } />
 

@@ -275,7 +275,7 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-8">
             <div>
-              <h3 className="text-lg font-semibold mb-4">About Food Ranger</h3>
+              <h3 className="text-lg font-semibold mb-4">About Plateful</h3>
               <p className="text-gray-400">
                 We're on a mission to reduce food waste and hunger by connecting communities through technology.
               </p>
@@ -298,7 +298,7 @@ const Home = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Food Ranger. All rights reserved.</p>
+            <p>&copy; 2025 Plateful.All rights reserved.</p>
           </div>
         </div>
       </section>

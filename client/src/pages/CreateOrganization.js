@@ -99,21 +99,70 @@ const CreateOrganization = () => {
       return;
     }
 
-    if (!formData.name || !formData.description || !formData.type || formData.services.length === 0) {
+    // Check all required fields
+    if (!formData.name || !formData.description || !formData.type || formData.services.length === 0 ||
+        !formData.address || !formData.city || !formData.state || !formData.country) {
       toast.error('Please fill in all required fields');
       return;
     }
 
     setLoading(true);
     try {
-      // TODO: Implement API call to create organization
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Prepare data for API call
+      const applicationData = {
+        name: formData.name,
+        description: formData.description,
+        type: formData.type,
+        contact: {
+          email: formData.email || user.email,
+          phone: formData.phone,
+          website: formData.website
+        },
+        address: {
+          street: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode
+        },
+        services: formData.services,
+        capacity: {
+          dailyMeals: parseInt(formData.capacity) || 0,
+          refrigeration: true,
+          freezer: true
+        },
+        requirements: {
+          eligibility: formData.requirements
+        }
+      };
+
+      // Upload logo if available
+      if (logo) {
+        // In a real implementation, you would upload the logo to a storage service
+        // and get back a URL to store in the database
+        // For now, we'll just simulate this
+        applicationData.logo = 'logo-url-placeholder';
+      }
+
+      // Submit organization application
+      const response = await fetch('/api/organization-applications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': localStorage.getItem('token')
+        },
+        body: JSON.stringify(applicationData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.msg || 'Failed to submit application');
+      }
       
-      toast.success('Organization created successfully!');
-      navigate('/organizations');
+      toast.success('Organization application submitted successfully! It will be reviewed by an administrator.');
+      navigate('/profile');
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to create organization');
+      console.error('Error submitting organization application:', error);
+      toast.error(error.message || 'Failed to submit organization application');
     } finally {
       setLoading(false);
     }
@@ -136,10 +185,10 @@ const CreateOrganization = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
             <FaBuilding className="mr-3 text-blue-600" />
-            Add Organization
+            Apply as an Organization
           </h1>
           <p className="mt-2 text-gray-600">
-            Help us expand our network by adding a new food bank, shelter, or community organization.
+            Submit your application to register as an organization. Once approved by an administrator, you'll be able to manage your organization and make donations.
           </p>
         </div>
 

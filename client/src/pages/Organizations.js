@@ -15,36 +15,27 @@ const Organizations = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    // TODO: Fetch organizations from API
-    setTimeout(() => {
-      setOrganizations([
-        {
-          id: 1,
-          name: 'Community Food Bank',
-          description: 'Providing food assistance to families in need',
-          type: 'food-bank',
-          services: ['food-distribution', 'emergency-assistance'],
-          location: 'Downtown Area',
-          operatingHours: 'Mon-Fri 9AM-5PM',
-          rating: { average: 4.8, count: 45 },
-          status: 'active',
-          logo: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400'
-        },
-        {
-          id: 2,
-          name: 'Hope Shelter',
-          description: 'Emergency shelter with food services',
-          type: 'shelter',
-          services: ['shelter', 'food-services', 'counseling'],
-          location: 'Westside District',
-          operatingHours: '24/7',
-          rating: { average: 4.6, count: 32 },
-          status: 'active',
-          logo: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400'
+    const fetchOrganizations = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/organizations');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch organizations');
         }
-      ]);
-      setLoading(false);
-    }, 1000);
+        
+        const data = await response.json();
+        // Only show verified and active organizations
+        const activeOrganizations = data.filter(org => org.isVerified && org.status === 'active');
+        setOrganizations(activeOrganizations);
+      } catch (error) {
+        console.error('Error fetching organizations:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrganizations();
   }, []);
 
   const filteredOrganizations = organizations.filter(org => {
@@ -67,8 +58,8 @@ const Organizations = () => {
     return types[type] || type;
   };
 
-  // Check if user can create organizations
-  const canCreateOrganization = user && ['volunteer', 'admin'].includes(user.role);
+  // Check if user can create organizations or apply as an organization
+  const canCreateOrganization = user && ['volunteer', 'admin', 'donor'].includes(user.role);
 
   if (loading) {
     return (
@@ -99,7 +90,7 @@ const Organizations = () => {
               >
                 <FaBuilding className="h-4 w-4" />
                 <span>
-                  {user.role === 'volunteer' ? 'Add Organization' : 'Create Organization'}
+                  {user.role === 'donor' ? 'Apply as Organization' : user.role === 'volunteer' ? 'Add Organization' : 'Create Organization'}
                 </span>
               </Link>
             )}

@@ -50,12 +50,20 @@ const Navbar = () => {
     // Role-specific items
     switch (user.role) {
       case 'donor':
-        baseItems.push({
-          to: '/donations/create',
-          label: 'Donate Food',
-          icon: FaHandHoldingHeart,
-          description: 'Share your excess food'
-        });
+        baseItems.push(
+          {
+            to: '/donations/create',
+            label: 'Donate Food',
+            icon: FaHandHoldingHeart,
+            description: 'Share your excess food'
+          },
+          {
+            to: '/my-applications',
+            label: 'My Organization Applications',
+            icon: FaBuilding,
+            description: 'View your organization applications'
+          }
+        );
         break;
       
       case 'recipient':

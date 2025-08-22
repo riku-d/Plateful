@@ -50,7 +50,7 @@ const Footer = () => {
               <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
                 <FaHeart className="text-white text-lg" />
               </div>
-              <span className="text-xl font-bold">Food Ranger</span>
+              <span className="text-xl font-bold">Plateful</span>
             </div>
             <p className="text-gray-400 text-sm mb-4">
               Connecting communities through food rescue. Together we can reduce waste and fight hunger.
@@ -173,10 +173,10 @@ const Footer = () => {
         <div className="border-t border-gray-800 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="text-gray-400 text-sm mb-4 md:mb-0">
-              &copy; {currentYear} Food Ranger. All rights reserved.
+              &copy; {currentYear} Plateful. All rights reserved.
             </div>
             <div className="flex space-x-6 text-sm text-gray-400">
-              <span>Made with ❤️ for a better world</span>
+              <span>Made with ❤️ by Team Sem;colon</span>
             </div>
           </div>
         </div>

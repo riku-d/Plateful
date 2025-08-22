@@ -21,7 +21,8 @@ const AdminDashboard = () => {
     users: 0,
     donations: 0,
     organizations: 0,
-    requests: 0
+    requests: 0,
+    pendingOrganizationApplications: 0
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -63,6 +64,15 @@ const AdminDashboard = () => {
       link: '/admin/organizations',
       color: 'text-purple-500',
       bgColor: 'bg-purple-100'
+    },
+    {
+      id: 'organization-applications',
+      title: 'Organization Applications',
+      description: 'Review and manage organization applications',
+      icon: FaBuilding,
+      link: '/admin/organization-applications',
+      color: 'text-indigo-500',
+      bgColor: 'bg-indigo-100'
     },
     {
       id: 'donation-management',
@@ -202,6 +212,26 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
+          
+          {/* Pending Organization Applications */}
+          {stats.pendingOrganizationApplications > 0 && (
+            <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-indigo-100 text-indigo-500 mr-4">
+                  <FaBuilding className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Pending Applications</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {loading ? '...' : stats.pendingOrganizationApplications}
+                  </p>
+                  <Link to="/admin/organization-applications" className="text-xs text-indigo-600 hover:text-indigo-800 mt-1 inline-block">
+                    Review applications →
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Organizations Stat */}
           <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
